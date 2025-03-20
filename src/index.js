@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { text } from 'stream/consumers';
 
 const program = new Command()
 
@@ -46,37 +45,6 @@ function processarArquivo(texto, destino) {
     })
 }
 
-//contar as palavras 
-function contaPalavras(texto){
-    const paragrafo = separaParagrafos(texto);
-    const contagemPalavras = paragrafo.flatmap((paragrafo) => {
-        if (!paragrafo) return [];
-        verificaPalavrasDuplicadas(texto)
-    })
-    return contagemPalavras;
-}
-
-//separar em paragrafos
-function separaParagrafos(texto) {
-    return texto.toLowerCase().split('/n');
-}
-
-//montar saida
-function montaSaidaArquivo(listaPalavras) {
-    let textoFinal = '';
-    listaPalavras.forEach((paragrafo, indice) => {
-        const duplicadas = filtraDuplicadas(paragrafo).join(', ');
-        textoFinal += `Palavras duplicadas no pargrafo ${indice + 1}: ${duplicadas}\n`
-    })
-
-    return textoFinal;
-}
-
-//filtra palavras duplicadas
-function filtraDuplicadas(paragrafo){
-    return Object.keys(paragrafo).filter(chave => paragrafo[chave] > 1)
-}
-
 //criar e salvar o arquivo
 async function criaESalvaArquivo(listaPalavras, endereco) {
     const arquivoNovo = `${endereco}/resultado.txt`;
@@ -89,6 +57,34 @@ async function criaESalvaArquivo(listaPalavras, endereco) {
     }
 }
 
+//contar as palavras 
+function contaPalavras(texto){
+    const paragrafo = separaParagrafos(texto);
+    const contagemPalavras = paragrafo.flatMap((paragrafo) => {
+        if (!paragrafo) return [];
+        return verificaPalavrasDuplicadas(paragrafo)
+    })
+    return contagemPalavras;
+}
+
+//separar em paragrafos
+function separaParagrafos(texto) {
+    return texto.toLowerCase().split('\n');
+}
+
+//montar saida
+function montaSaidaArquivo(listaPalavras) {
+    let textoFinal = '';
+    listaPalavras.forEach((paragrafo, indice) => {
+        const duplicadas = filtraDuplicadas(paragrafo).join(', ');
+        if(duplicadas){
+            textoFinal += `Palavras duplicadas no paragrafo ${indice + 1}: ${duplicadas} \n`
+        }
+    })
+
+    return textoFinal;
+}
+
 function resolveErros(erro){
     if (erro.code === 'ENOENT') {
         throw new Error ('Arquivo nao encontrado!')
@@ -98,14 +94,23 @@ function resolveErros(erro){
 }
 
 function verificaPalavrasDuplicadas(texto) {
-    const limpaPalavra = texto.split(' ');
+    const listaPalavra = texto.split(' ');
     const resultado = {};
-    listaPalavras.forEach(palavra => {
+    listaPalavra.forEach(palavra => {
         if (palavra.length >= 3) {
-            const palavraLimpa = limpaPalavra(palavra);
+            const palavraLimpa = limpaPalavras(palavra);
             resultado[palavraLimpa] = (resultado[palavraLimpa] || 0) + 1
         }
     })
 
     return resultado;
 }
+
+//filtra palavras duplicadas
+function filtraDuplicadas(paragrafo) {
+    return Object.keys(paragrafo).filter(chave => paragrafo[chave] > 1)
+  }
+
+function limpaPalavras(palavra) {
+    return palavra.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
+  }
